@@ -1,0 +1,142 @@
+% Define global variables here (S0, Xinit, Ninit, etc.)
+
+global fermentduration interpolatedSugar realtime time ;
+
+timeaddition0=100;
+Nadd0=0.015;
+Nadd=Nadd0;
+timeaddition=timeaddition0;
+
+% Define lower and upper bounds for Nadd and timeaddition
+Nadd_lb = 0.001; % Lower bound for Nadd
+Nadd_ub = 0.065; % Upper bound for Nadd
+
+timeaddition_lb = 24; % Lower bound for timeaddition
+timeaddition_ub = 500; % Upper bound for timeaddition
+
+% Perform optimization with bounds
+options = optimoptions('fmincon', 'MaxIterations', 20, 'Display', 'iter');
+lb = [Nadd_lb, timeaddition_lb]; % Lower bounds
+ub = [Nadd_ub, timeaddition_ub]; % Upper bounds
+optimal_params = fmincon(@(params) objectiveFunction(params(1), params(2)), [Nadd0, timeaddition0], [], [], [], [], lb, ub, [], options);
+% Extract the optimized parameters
+optimized_Nadd = optimal_params(1)
+optimized_timeaddition = optimal_params(2)
+
+% Use the optimized parameters for simulation
+Nadd = optimized_Nadd;
+timeaddition = optimized_timeaddition;
+
+% Run the simulation using the optimized Nadd and timeaddition
+simulatedData = runSimulation(Nadd, timeaddition);
+
+% Perform any necessary calculations using simulatedData and interpolatedSugar
+interpolatedSugar=interp1(realtime, sugar, time);
+
+%Imprimir simulació
+
+yyaxis left
+subplot(2,1,1)
+plot(time, simulatedData(:,1), 'b-')
+
+hold on;
+
+plot(time,interpolatedSugar,'r--');
+
+xlabel('Time (h)');
+ylabel('S (g/L) ');
+
+xlim([min(time), max(time)]);
+
+hold off;
+
+yyaxis right
+subplot(2,1,1)
+plot (time,simulatedData(:,3),'g-');
+legend ('S simulated','S real','X');
+ylabel ('X (n cell/L)');
+
+yyaxis left
+subplot(2,1,2)
+plot(time,simulatedData(:,2),'r-')
+legend ('N');
+xlabel('Time (h)');
+ylabel('N (g/L)');
+text(400, 0.2, ['Simulated ferment time: ', num2str(round(time(end)/24)),' days']);
+text(400,0.15,['Real ferment time: ', num2str(fermentduration),' days'])
+
+% Define the runSimulation function
+function [y,time] = runSimulation(Nadd, timeaddition)
+    
+    global time solution S0 Ninit Xinit 
+
+    solution = [];
+    time = [];
+    t_start = 0;
+    t_end = 1;
+    tspan = [t_start, t_end];
+
+    S_0 = S0;
+    N_0 = Ninit;
+    X_0 = Xinit;
+    y0 = [S_0, N_0, X_0];
+
+    % solver edo per trobar temps de simulació
+    while true
+        [t, y] = ode45(@(t, y) miode(t, y, Nadd, timeaddition), tspan, y0);
+
+        % Accumulate solutions
+        solution = [solution; y];
+        time = [time; t];
+
+        % Check condition
+        if y(end, 1) <= (0.02 * S0)
+            break;
+
+        end
+
+        if t>800
+            break
+        end
+
+
+        % Redefine tspan and y0 vectors
+        t_start = t(end);
+        t_end = t(end) + 1;
+        tspan = [t_start, t_end];
+
+        % Condition to consider additions
+        if t_start == timeaddition
+            N_0 = Nadd;
+        else
+            N_0 = y(end, 2);
+        end
+
+        S_0 = y(end, 1);
+        X_0 = y(end, 3);
+        y0 = [S_0, N_0, X_0];
+    end
+    
+    % Return the final simulated data
+    y = solution;
+end
+
+function objective = objectiveFunction(Nadd, timeaddition)
+ 
+    global sugar time realtime
+    simulatedData=[];
+    time=[];
+    % Run the simulation using the given Nadd and timeaddition
+    simulatedData = runSimulation(Nadd, timeaddition);
+
+  
+    difference=round(time(end)/24)-round(realtime(end)/24);
+   
+
+    
+    % Return the objective value with the penalty term
+    objective = difference
+   
+   
+
+end
