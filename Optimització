@@ -7,41 +7,42 @@ timeaddition=timeaddition0;
 
 
 
-% Define your objective function
+% Definim funció objectiu
 objective = @(params) objectiveFunction(params(1), params(2));
 
-% Initial guess for parameters
+% Valors inicial de les variables d'optimització
 initial_params = [Nadd0, timeaddition0];
 
-% Perform optimization using fminsearch
+% Optimització amb l'algoritme fminsearch
 options = optimset('Display', 'iter', 'MaxIter', 30);
 [optimal_params, fval] = fminsearch(objective, initial_params, options);
 
-% Extract the optimized parameters
+% Extracció dels valors optimitzats
 optimized_Nadd = optimal_params(1);
 optimized_timeaddition = optimal_params(2);
 
-% Display optimized results
+% Imprimir valors de l'optimització
 disp('Optimized Parameters:');
 disp(['Optimized Nadd: ', num2str(optimized_Nadd)]);
 disp(['Optimized timeaddition: ', num2str(optimized_timeaddition)]);
 disp(['Objective value: ', num2str(fval)]);
 
-% Use the optimized parameters for simulation
+% ús dels valors optimitzats per corre la simulació i imprimir els resultats
 Nadd = optimized_Nadd;
 timeaddition = round(optimized_timeaddition);
+
+%reset de les matrius
 solution=[];
 time=[];
-% Run the simulation using the optimized Nadd and timeaddition
+
+% Run de la simulació
 [solution,time] = runSimulation(Nadd, timeaddition);
 
-% Perform any necessary calculations using simulatedData and interpolatedSugar
+% Operació per fer coincidir size de les dades reals amb el size de la simulació
 interpolatedSugar = interp1(realtime, sugar, time);
 
-% ... Rest of your plotting code and simulation functions
 
-
-%Imprimir simulació
+%Imprimir simulació optimitzada
 
 yyaxis left
 subplot(2,1,1)
@@ -73,7 +74,7 @@ ylabel('N (g/L)');
 text(400, 0.2, ['Simulated ferment time: ', num2str(round(time(end)/24)),' days']);
 text(400,0.15,['Real ferment time: ', num2str(fermentduration),' days'])
 
-% Define the runSimulation function
+% Funció per corre la simulació
 function [solution,time] = runSimulation(Nadd, timeaddition)
     
     global S0 Ninit Xinit 
@@ -93,7 +94,7 @@ function [solution,time] = runSimulation(Nadd, timeaddition)
     while true
         [t, y] = ode45(@(t, y) miode(t, y, Nadd, timeaddition), tspan, y0);
 
-        % Accumulate solutions
+        % Acumulador de solucions
         solution = [solution; y];
         time = [time; t];
 
@@ -103,17 +104,18 @@ function [solution,time] = runSimulation(Nadd, timeaddition)
 
         end
 
-        if t>800
+        %if de seguretat per evitar loops infinits
+        if t>1000
             break
         end
 
 
-        % Redefine tspan and y0 vectors
+        % Redifinició de tspan
         t_start = t(end);
         t_end = t(end) + 1;
         tspan = [t_start, t_end];
 
-        % Condition to consider additions
+        % Condició per considerar adicions.
         if t_start == timeaddition
             N_0 = Nadd;
         else
@@ -125,45 +127,39 @@ function [solution,time] = runSimulation(Nadd, timeaddition)
         y0 = [S_0, N_0, X_0];
     end
     
-    % Return the final simulated data
+    % Retornar valors de la simulació.
     y = solution;
     t=time;
 end
 
+
+%Funció per generar la ObjectiveFunction
 function objective = objectiveFunction(Nadd, timeaddition)
  
     solution=[];
     time=[];
     
-   % Apply bounds to Nadd and timeaddition
-    Nadd_lb = 0.001; % Lower bound for Nadd
-    Nadd_ub = 0.065; % Upper bound for Nadd
+   % Aplicador de limits de seguretat
+    Nadd_lb = 0.001; % Limit inferior per Nadd
+    Nadd_ub = 0.065; % Limit superor per Nadd
 
-    timeaddition_lb = 24; % Lower bound for timeaddition
-    timeaddition_ub = 500; % Upper bound for timeaddition
+    timeaddition_lb = 24; % limit inferior per timeaddition
+    timeaddition_ub = 500; % limit superior per timeaddition
     
-    % Round timeaddition to the nearest integer
+    % Aproximar valor per obtenir numeros enters
     rounded_timeaddition = round(timeaddition);
 
-    % Apply limits to rounded_timeaddition
+    % Aplicació dels limits per timeaddition
     timeaddition = max(min(rounded_timeaddition, timeaddition_ub), timeaddition_lb)
 
-    % Apply bounds to Nadd
+    % Aplicació dels limits per Nadd
     Nadd = max(min(Nadd, Nadd_ub), Nadd_lb);
 
-    % Print the current values of Nadd and timeaddition
-    disp(['Current Nadd: ', num2str(Nadd)]);
-    disp(['Current timeaddition: ', num2str(timeaddition)]);
 
-    % Run the simulation using the given Nadd and timeaddition
+    % Corre la simulació amb els nous valors de Nadd i timeaddition
     [solution,time] = runSimulation(Nadd, timeaddition);
 
   
-    difference=time(end)
+    objective=time(end)
    
-    % Return the objective value with the penalty term
-    objective = difference;
-   
-   
-
 end
