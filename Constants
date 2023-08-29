@@ -1,7 +1,7 @@
 clear all;
 clc;
 
-global Xinit aN aS Kn Kni k3 k2 KS KSI Ninit A0 A1 A2 A3 A4 A5 A6 Xmax Tucd tlatency S0 sugar temp timeaddition
+global Xinit aN aS Kn Kni k3 k2 KS KSI Ninit A0 A1 A2 A3 A4 A5 A6 Xmax Tucd tlatency S0 sugar temp fermentduration 
 
 %constants
 
@@ -29,19 +29,19 @@ A6=-1;
 
 %Data extractor 1 fermentacións NOVA ZELANDA
 
-brixdata=readmatrix('/Users/yaku/Documents/tfg/data/brix.csv');
-tempdata=readmatrix('/Users/yaku/Documents/tfg/data/temp.csv');
+brixdata = xlsread('/Users/yaku/Documents/tfg/data/data_NZ.xlsx',1);
+tempdata=xlsread('/Users/yaku/Documents/tfg/data/data_NZ.xlsx',2);
 
- 
+
 %{
+
 %brix data
-brix=flip(brixdata(96,21:36));
+brix=flip(brixdata(286,25:43));
 sugar=(brix./(100-brix))*1000;
 sugar(sugar < 0) = 0;
 S0=sugar(1); %g/L
 %temp data
-temp=flip(tempdata(96,21:36));
-yan=flip(yandata(6,48));
+temp=flip(tempdata(281,25:43));
 duration=size(temp);
 fermentduration=duration(1,2);
 %}
@@ -50,10 +50,10 @@ fermentduration=duration(1,2);
 
 %Data extractor 2 fermentacions ROMANIA
 
-data = xlsread('/Users/yaku/OneDrive - campus.udg.edu/docs/wines/CAMPAIN LIPNITA 2022/Copy of FERMENTATION CONTROL LIPNITA 2022.xlsx',38);
+data = xlsread('/Users/yaku/OneDrive - campus.udg.edu/docs/wines/CAMPAIN LIPNITA 2022/Ferments Lipnita 2022.xlsx',3);
 
-brix=transpose(data(4:27,2));
-temp=transpose(data(4:27,3));
+brix=transpose(data(4:32,2));
+temp=transpose(data(4:32,3));
 
 
 sugar=(brix./(100-brix))*1000;
@@ -63,7 +63,7 @@ S0=sugar(1); %g/L
 
 %Variables depenents de database
 
-Ninit=0.3159;
+Ninit=0.33;
 Xmax=-6.49E11*Ninit^2+6.98E11*Ninit+7E9; %funcion xmax a partir de nini
 sizesugar=size(sugar);
 Tucd=temp(1);
@@ -91,6 +91,5 @@ end
 
 %temps d'adició de nitrogen
 
-timeaddition=5*24;
 
 
