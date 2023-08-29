@@ -1,7 +1,7 @@
-function [dy]=miode(t,y)
+function [dy]=miode(t,y,Nadd,timeaddition)
 
 %definim cosntants + funcions a utilitzar en la edo
-global  Xinit aN aS Kn Kni k3 k2 KS KSI  Ninit Nadd A0 A1 A2 A3 A4 A5 A6 Xmax Tucd tlatency S0 temp fermentduration N_0 timeaddition 
+global  Xinit aN aS Kn Kni k3 k2 KS KSI  Ninit A0 A1 A2 A3 A4 A5 A6 Xmax Tucd tlatency S0 temp fermentduration N_0   
 
 
 %counter to extract real data, separem t en dies 
@@ -27,10 +27,10 @@ end
 
 %funció addició nitrogen (DAP)
 if t>timeaddition
-   Nadd=0.068;
     A0=3.2;
     N_0=Nadd;
    
+ 
 else 
     Nadd=0;
     A0=1;
@@ -74,5 +74,6 @@ dy(3)=k*y(3)*(1-y(3)/Xmax);
 dy=[dy(1);dy(2);dy(3)];
 
 end
+
 
 
