@@ -21,15 +21,32 @@ options = optimset('Display', 'iter', 'MaxIter', 30);
 optimized_Nadd = optimal_params(1);
 optimized_timeaddition = optimal_params(2);
 
-% Imprimir valors de l'optimització
-disp('Optimized Parameters:');
-disp(['Optimized Nadd: ', num2str(optimized_Nadd)]);
-disp(['Optimized timeaddition: ', num2str(optimized_timeaddition)]);
-disp(['Objective value: ', num2str(fval)]);
 
 % ús dels valors optimitzats per corre la simulació i imprimir els resultats
 Nadd = optimized_Nadd;
 timeaddition = round(optimized_timeaddition);
+
+  % Aplicador de limits de seguretat
+    Nadd_lb = 0.001; % Limit inferior per Nadd
+    Nadd_ub = 0.065; % Limit superor per Nadd
+
+    timeaddition_lb = 24; % limit inferior per timeaddition
+    timeaddition_ub = 500; % limit superior per timeaddition
+    
+    % Aproximar valor per obtenir numeros enters
+    rounded_timeaddition = round(timeaddition);
+
+    % Aplicació dels limits per timeaddition
+    timeaddition = max(min(rounded_timeaddition, timeaddition_ub), timeaddition_lb)
+
+    % Aplicació dels limits per Nadd
+    Nadd = max(min(Nadd, Nadd_ub), Nadd_lb);
+
+% Imprimir valors de l'optimització
+disp('Optimized Parameters:');
+disp(['Optimized Nadd: ', num2str(Nadd)]);
+disp(['Optimized timeaddition: ', num2str(timeaddition)]);
+disp(['Objective value: ', num2str(fval)]);
 
 %reset de les matrius
 solution=[];
@@ -139,23 +156,7 @@ function objective = objectiveFunction(Nadd, timeaddition)
     solution=[];
     time=[];
     
-   % Aplicador de limits de seguretat
-    Nadd_lb = 0.001; % Limit inferior per Nadd
-    Nadd_ub = 0.065; % Limit superor per Nadd
-
-    timeaddition_lb = 24; % limit inferior per timeaddition
-    timeaddition_ub = 500; % limit superior per timeaddition
-    
-    % Aproximar valor per obtenir numeros enters
-    rounded_timeaddition = round(timeaddition);
-
-    % Aplicació dels limits per timeaddition
-    timeaddition = max(min(rounded_timeaddition, timeaddition_ub), timeaddition_lb)
-
-    % Aplicació dels limits per Nadd
-    Nadd = max(min(Nadd, Nadd_ub), Nadd_lb);
-
-
+ 
     % Corre la simulació amb els nous valors de Nadd i timeaddition
     [solution,time] = runSimulation(Nadd, timeaddition);
 
