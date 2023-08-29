@@ -1,13 +1,17 @@
 
-global S0 Xinit Ninit y0 fermentduration timeaddition N_0;
+global S0 Xinit Ninit y0 fermentduration timeaddition N_0 Nadd interpolatedSugar realtime ;
 %Definició inicial del vector tspan
 t_start=0;
 t_end=1;
 tspan = [t_start, t_end];
 solution=[];
 time=[];
-realtime=[1:24:sizesugar(1,2)*24];
-
+sizesugar=size(sugar);
+realtime=[0:24:sizesugar(1,2)*24-1];
+timeaddition=83;
+Nadd=0.0786;
+%Optimized Nadd: 0.065
+%ºOptimized timeaddition: 83
 %Definició inicial del vector y0 
    
 S_0=S0;
@@ -16,10 +20,13 @@ X_0=Xinit;
 y0 = [S_0, N_0, X_0];
 
 
+
 %solver edo per trobar temps de simulació
 while true
 
-[t,y] = ode45(@miode, tspan,y0);
+
+[t,y] = ode45(@(t, y) miode(t, y, Nadd, timeaddition), tspan, y0);
+
 
   % Accumulador de solucions
        
@@ -46,7 +53,7 @@ while true
 
 if t_start==timeaddition
 
-  N_0=0.15;
+  N_0=Nadd;
 
 else
 
@@ -58,11 +65,27 @@ end
     X_0=y(end,3);
     y0=[S_0,N_0,X_0];
   
-   
 
 end
 
+
 Ethanol=0.464*(S0-solution(:,1))/789*100;
+
+%Coincidir vectors
+interpolatedSugar= interp1(realtime, sugar, time)
+interpolatedSugar(isnan(interpolatedSugar)) = 0;
+
+% Simulated data and real data arrays
+simulated_data = real(solution(:,1)); % Replace with your simulated data array
+real_data = interpolatedSugar; % Replace with your real data array
+
+% Calculate R-squared
+mean_real = mean(real_data);
+ss_total = sum((real_data - mean_real).^2);
+ss_residual = sum((simulated_data - real_data).^2);
+r_squared = 1 - ss_residual / ss_total;
+
+fprintf('Coefficient of Determination (R-squared): %.4f\n', r_squared);
 
 
 %Imprimir simulació
@@ -73,7 +96,7 @@ plot(time, solution(:,1), 'b-')
 
 hold on;
 
-plot(realtime,sugar,'r--');
+plot(time,interpolatedSugar,'r--');
 
 xlabel('Time (h)');
 ylabel('S (g/L) ');
@@ -90,9 +113,21 @@ ylabel ('X (n cell/L)');
 
 yyaxis left
 subplot(2,1,2)
-plot(time,solution(:,2),'r-')
+plot(time,solution(:,2),'b-')
 legend ('N');
 xlabel('Time (h)');
 ylabel('N (g/L)');
-text(400, 0.2, ['Simulated ferment time: ', num2str(round(t(end)/24)),' days']);
-text(400,0.15,['Real ferment time: ', num2str(fermentduration),' days'])
+text(0.7*time(end), 0.2, ['Simulated ferment time: ', num2str(round(t(end)/24)),' days']);
+text(0.7*time(end),0.15,['Real ferment time: ', num2str(fermentduration),' days'])
+text(0.7*time(end),0.10,['R^2= ',num2str(r_squared)]);
+
+yyaxis right
+subplot(2,1,2)
+plot(realtime,temp,'r-')
+legend ('N','T');
+
+
+
+
+
+
